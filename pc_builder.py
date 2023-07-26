@@ -1,7 +1,9 @@
 from database import Database
 import inspect
+import logging
 from pc_parts import CPU, CPUCooler, Motherboard, Memory, Storage, VideoCard, Case, PowerSupply, OperatingSystem, Monitor
-
+        
+        
 class PCBuilder:
     def __init__(self, database: Database):
         self.database = database
@@ -18,6 +20,27 @@ class PCBuilder:
             "Monitor": Monitor    
         }
 
+        # Set up logging
+        self.logger = logging.getLogger("pc_builder")
+        self.logger.setLevel(logging.DEBUG)
+
+        # Create a file handler and set the level to DEBUG
+        file_handler = logging.FileHandler("pc_builder.log")
+        file_handler.setLevel(logging.DEBUG)
+
+        # Create a console handler and set the level to INFO
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.INFO)
+
+        # Create a formatter and attach it to the handlers
+        formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        file_handler.setFormatter(formatter)
+        console_handler.setFormatter(formatter)
+
+        # Add the handlers to the logger
+        self.logger.addHandler(file_handler)
+        self.logger.addHandler(console_handler)
+        
     def start(self):
         while True:
             print("\n1. See all items")
@@ -73,6 +96,8 @@ class PCBuilder:
             # Create the PCPart instance with the collected details
             item = pc_part_class(**kwargs)
             self.database.add_item(category, item)
+            self.logger.info(f"Added {category} item: {item.get_name()}")
+
         else:
             print("Invalid category")
 
@@ -90,6 +115,7 @@ class PCBuilder:
 
         if item_to_delete:
             self.database.delete_item(category, item_to_delete)
+            self.logger.info(f"Deleted {category} item: {item_name}")
         else:
             print(f"Item '{item_name}' does not exist in category '{category}'.")
 
