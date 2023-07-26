@@ -1,10 +1,12 @@
 import logging
+from typing import List, Dict, Optional
 from pc_parts import PCPart, CPU, CPUCooler, Motherboard, Memory, Storage, VideoCard, Case, PowerSupply, OperatingSystem, Monitor
 
 
 class Database:
     def __init__(self, logger):
-        self.db = {
+        self.logger = logger
+        self.db: Dict[str, List[PCPart]] = {
             'CPUs': [
                 CPU("Intel Core i7", 300.0, "Silver", "Intel", "4.6 GHz", "95 W"),
                 CPU("AMD Ryzen 5", 200.0, "Silver", "AMD", "4.2 GHz", "65 W"),
@@ -76,42 +78,28 @@ class Database:
                 Monitor("Acer Nitro QG241Y Pbmiipx", 119.99, "Black", 165, 23.8, "1920 x 1080"),
             ],
         }
-        self.logger = logger
-        # Create a logger for the Database class
-        self.logger = logging.getLogger("DatabaseLogger")
-        self.logger.setLevel(logging.INFO)
-
-        # Configure a console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        console_handler.setFormatter(console_formatter)
-
-        file_handler = logging.FileHandler("app_log.txt")  # Change "app_log.txt" to the desired file name
-        file_handler.setLevel(logging.INFO)
-        file_formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-        file_handler.setFormatter(file_formatter)
-        # Add the console handler to the logger
-        self.logger.addHandler(console_handler)
-
-    def get_items(self, category: str):
+    def get_items(self, category: str) -> List[PCPart]:
         return self.db.get(category, [])
 
-    def add_item(self, category, item):
+    def add_item(self, category: str, item: PCPart) -> None:
         if category in self.db:
             self.db[category].append(item)
         else:
             self.db[category] = [item]
 
-    def delete_item(self, category: str, item: PCPart):
-        if category in self.db and item in self.db[category]:
-            self.db[category].remove(item)
-            self.logger.info(f"Deleted {item.get_name()} from {category}")
+    def delete_item(self, category: str, item: PCPart) -> None:
+        if category in self.db:
+            try:
+                self.db[category].remove(item)
+                self.logger.info(f"Deleted {item.get_name()} from {category}")
+            except ValueError:
+                self.logger.error(f"Item {item.get_name()} does not exist in category {category}")
         else:
-            self.logger.error(f"Item {item.get_name()} does not exist in category {category}")
+            self.logger.error(f"Category {category} does not exist")
 
-    def search(self, category: str, **kwargs):
+    def search(self, category: str, **kwargs) -> List[Dict[str, Optional[str]]]:
         if category not in self.db:
+            self.logger.error(f"Category {category} does not exist")
             return []
 
         matching_items = []
@@ -125,9 +113,9 @@ class Database:
                 }
                 matching_items.append(item_info)
         return matching_items
-    
-    def get_total_price(self):
-        total = 0
+
+    def get_total_price(self) -> float:
+        total = 0.0
         for category in self.db.values():
             for item in category:
                 price = item.get_price()  # Get the item price
